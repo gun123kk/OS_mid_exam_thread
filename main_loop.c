@@ -1,18 +1,23 @@
 /*
+compile:
+$ gcc -pthread main_loop.c 
+
+run:
+% ./a.out strategy_number
+ex ./a.out 1 (selecting strategy 1)
+
+test on the ubuntu18.04 ok
+
 reference:
 https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tutorial/
-compile
-$ gcc -pthread main_loop.c 
 */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "./matrix.h"
 #include <pthread.h>
 #include <unistd.h>
-
-#define test_1 0
-#define test_2 1
+#include "./matrix.h"
+#include <sys/time.h>
 
 void *test2(void*);
 void run_test2(pthread_t *, MX_A *, MX_B *, MX_C *);
@@ -40,21 +45,22 @@ void *test2(void* data) {
 
 	mx_all->mx_c->MTX[i][j] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
 	//printf("c[%d][%d]: %d \n", i, j, mx_all->mx_c->MTX[i][j]);
+
+	free(data);
 	pthread_exit(NULL);
 }
 
 void run_test2(pthread_t *td, MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 	//test2: 10k threads
 	int i = 0;
-	MX_ALL *mx_all = malloc(sizeof(MX_ALL));
-	mx_all->mx_a = mx_a;
-	mx_all->mx_b = mx_b;
-	mx_all->mx_c = mx_c;
-
 	for (i=0;i<a_i*b_j;i++) {
+		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
+		mx_all->mx_a = mx_a;
+		mx_all->mx_b = mx_b;
+		mx_all->mx_c = mx_c;
 		mx_all->index = i;
+
 		pthread_create(&(td[i]), NULL, test2, (void*) mx_all);
-		usleep(20);
 	}
 }
 
@@ -95,12 +101,18 @@ void cal_mxa_mul_mxb(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 }
 
 
-int main(void) {
+int main(int *argc, char *argv[]) {
+
 	MX_A *mx_a = NULL;
 	MX_B *mx_b = NULL;
 	MX_C *mx_c = NULL;
+	int strategy = 0;
+	struct timeval start, end;
+	int passed_time = 0;	
 
 	pthread_t td[a_i *b_j];	
+	strategy = atoi(argv[1]);
+	printf("select test_%d\n", strategy);
 
 	//initial matrix
 	set_MX_A_addr(&mx_a);
@@ -113,17 +125,24 @@ int main(void) {
 	printf("initial [c]:\n");
 	mx_c->show_matrix(mx_c);
 	
-#if test_1	
-	printf("==== test1 ====\n");
-	cal_mxa_mul_mxb(mx_a, mx_b, mx_c);
-	printf("cal [c] = [a] * [b]:\n");
-	mx_c->show_matrix(mx_c);
-#elif test_2
-	printf("==== test2 ====\n");
-	run_test2(td, mx_a, mx_b, mx_c);
-	wait_all_thread_done(td);
-	mx_c->show_matrix(mx_c);
-#endif
+	gettimeofday( &start, NULL );
+	
+	// run process by selected strategy 
+	if (strategy == 1) {	
+		printf("==== test1 ====\n");
+		cal_mxa_mul_mxb(mx_a, mx_b, mx_c);
+		printf("cal [c] = [a] * [b]:\n");
+		mx_c->show_matrix(mx_c);
+	} else if (strategy == 2) {
+		printf("==== test2 ====\n");
+		run_test2(td, mx_a, mx_b, mx_c);
+		wait_all_thread_done(td);
+		mx_c->show_matrix(mx_c);
+	}
+	gettimeofday( &end, NULL );
+
+	passed_time= 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
+    printf("passed time: %d us\n", passed_time);
 	free(mx_a);
 	free(mx_b);
 	free(mx_c);
