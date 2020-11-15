@@ -21,12 +21,71 @@ https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tuto
 
 void *test2(void*);
 void *test3(void*);
+void *test4(void*);
 void run_test1(MX_A *, MX_B *, MX_C *);
 void run_test2(MX_A *, MX_B *, MX_C *);
 void run_test3(MX_A *, MX_B *, MX_C *);
+void run_test4(MX_A *, MX_B *, MX_C *);
 
 void wait_all_thread_done(pthread_t *, int);
 float cal_one_cell(MX_A *, MX_B *, int *);
+
+
+void *test4(void* data) {
+
+	MX_ALL *mx_all = (MX_ALL*) data;
+	int i,j;
+	int indexs[2];
+	int blk_index = mx_all->index;
+	// block row interval
+	int blk_row_il = a_i / 4; 
+	// block column interval
+	int blk_col_il = a_i / 4;	
+
+	int row = (blk_index / 4) * blk_row_il;
+	int col = (blk_index % 4) * blk_col_il;
+
+	// block row length
+	int blk_row_len = row + blk_row_il;	
+	// block col length
+	int blk_col_len = col + blk_row_il;
+	
+	//printf("test4 , blk_index:%d, row: %d col: %d\n", blk_index, row, col);
+	
+	for (i=row;i<blk_row_len;i++) {
+		indexs[0] = i;
+		for (j=col;j<blk_col_len;j++) {
+			indexs[1] = j;
+			//printf("test4 , blk_index: %d, i: %d, j: %d\n", blk_index, i, j);
+			mx_all->mx_c->MTX[i][j] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
+		}
+	}
+
+	free(data);
+	//printf("test4\n");
+	pthread_exit(NULL);
+}
+
+void run_test4(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
+	// test4: 16 threads
+	// threads pointer for test4(16 threads)
+	// one thread calculates block 25*25
+	int size = 16;
+	pthread_t td[size];	
+	int index = 0;
+
+	for (index=0;index<size;index++) {
+		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
+		mx_all->mx_a = mx_a;
+		mx_all->mx_b = mx_b;
+		mx_all->mx_c = mx_c;
+		mx_all->index = index;
+		//printf("test4 , index:%d\n", index);
+		pthread_create(&(td[index]), NULL, test4, (void*) mx_all);
+	}
+
+	wait_all_thread_done(td, size);
+}
 
 
 void *test3(void* data) {
@@ -34,14 +93,14 @@ void *test3(void* data) {
 	MX_ALL *mx_all = (MX_ALL*) data;
 	int indexs[2];
 	int row = mx_all->index; 
-	int column;
+	int col;
 
 	indexs[0] = row;
 	//printf("test3 row:%d\n", row);
-	for (column=0;column<a_i;column++) { 
-		indexs[1] = column;
-		mx_all->mx_c->MTX[row][column] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
-		//printf("c[%d][%d]: %d \n", row, column, mx_all->mx_c->MTX[row][column]);
+	for (col=0;col<a_i;col++) { 
+		indexs[1] = col;
+		mx_all->mx_c->MTX[row][col] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
+		//printf("c[%d][%d]: %d \n", row, col, mx_all->mx_c->MTX[row][col]);
 	}
 	free(data);
 	//printf("test3\n");
@@ -161,12 +220,12 @@ int main(int *argc, char *argv[]) {
 	set_MX_A_addr(&mx_a);
 	set_MX_B_addr(&mx_b);
 	set_MX_C_addr(&mx_c);
-	printf("initial [a]:\n");
-	mx_a->show_matrix(mx_a);
-	printf("initial [b]:\n");
-	mx_b->show_matrix(mx_b);
-	printf("initial [c]:\n");
-	mx_c->show_matrix(mx_c);
+	//printf("initial [a]:\n");
+	//mx_a->show_matrix(mx_a);
+	//printf("initial [b]:\n");
+	//mx_b->show_matrix(mx_b);
+	//printf("initial [c]:\n");
+	//mx_c->show_matrix(mx_c);
 	
 	gettimeofday( &start, NULL );
 	
@@ -180,13 +239,18 @@ int main(int *argc, char *argv[]) {
 	} else if (strategy == 3) {
 		printf("==== test3 ====\n");
 		run_test3(mx_a, mx_b, mx_c);
+	} else if (strategy == 4) {
+		printf("==== test4 ====\n");
+		run_test4(mx_a, mx_b, mx_c);
 	}
+
 	printf("cal [c] = [a] * [b]:\n");
 	mx_c->show_matrix(mx_c);
 	gettimeofday( &end, NULL );
 
 	passed_time= 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
     printf("passed time: %d us\n", passed_time);
+
 	free(mx_a);
 	free(mx_b);
 	free(mx_c);
