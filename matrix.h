@@ -2,10 +2,10 @@
 #include <stdio.h>
 
 
-#define a_i 2
-#define a_j 3
-#define b_i 3
-#define b_j 2
+#define a_i 8
+#define a_j 4
+#define b_i 4
+#define b_j 8
 
 
 typedef struct matrix_a {

@@ -21,11 +21,12 @@ https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tuto
 
 void *test2(void*);
 void *test3(void*);
+void run_test1(MX_A *, MX_B *, MX_C *);
 void run_test2(MX_A *, MX_B *, MX_C *);
 void run_test3(MX_A *, MX_B *, MX_C *);
+
 void wait_all_thread_done(pthread_t *, int);
 float cal_one_cell(MX_A *, MX_B *, int *);
-void run_test1(MX_A *, MX_B *, MX_C *);
 
 
 void *test3(void* data) {
@@ -36,14 +37,14 @@ void *test3(void* data) {
 	int column;
 
 	indexs[0] = row;
-	printf("test3 row:%d\n", row);
+	//printf("test3 row:%d\n", row);
 	for (column=0;column<a_i;column++) { 
 		indexs[1] = column;
 		mx_all->mx_c->MTX[row][column] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
-		printf("c[%d][%d]: %d \n", row, column, mx_all->mx_c->MTX[row][column]);
+		//printf("c[%d][%d]: %d \n", row, column, mx_all->mx_c->MTX[row][column]);
 	}
 	free(data);
-	printf("test3\n");
+	//printf("test3\n");
 	pthread_exit(NULL);
 }
 
@@ -135,7 +136,7 @@ void run_test1(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 		for(j=0;j<b_j;j++) {
 			indexs[1] = j;
 			mx_c->MTX[i][j] = cal_one_cell(mx_a, mx_b, indexs);
-			printf("c[%d][%d]: %d \n", i, j, mx_c->MTX[i][j]);
+			//printf("c[%d][%d]: %d \n", i, j, mx_c->MTX[i][j]);
 	 	}
 	}
 }
@@ -146,12 +147,14 @@ int main(int *argc, char *argv[]) {
 	MX_A *mx_a = NULL;
 	MX_B *mx_b = NULL;
 	MX_C *mx_c = NULL;
-	int strategy = 0;
+	int strategy = 1;
 	struct timeval start, end;
 	int passed_time = 0;	
 	
 	// get strategy from user typed
-	strategy = atoi(argv[1]);
+	if (argv[1] != NULL) {
+		strategy = atoi(argv[1]);
+	}
 	printf("select test_%d\n", strategy);
 
 	// initial matrix
