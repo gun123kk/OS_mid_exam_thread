@@ -2,27 +2,26 @@
 #include <stdio.h>
 
 
-#define a_i 8
-#define a_j 4
-#define b_i 4
-#define b_j 8
+#define a_i	100
+#define a_j 60
+#define b_i 60
+#define b_j 100
 
 
 typedef struct matrix_a {
-	int MTX[a_i][a_j];
+	float MTX[a_i][a_j];
 	void(*initial_martix)(struct matrix_a *);	
 	void(*show_matrix)(struct matrix_a *);	
 } MX_A;
 
 typedef struct matrix_b {
-	int MTX[b_i][b_j];
+	float MTX[b_i][b_j];
 	void(*initial_martix)(struct matrix_b *);	
 	void(*show_matrix)(struct matrix_b *);	
 } MX_B;
 
 typedef struct matrix_c {
-	int test;
-	int MTX[a_i][b_j];
+	float MTX[a_i][b_j];
 	void(*initial_martix)(struct matrix_c *);	
 	void(*show_matrix)(struct matrix_c *);	
 } MX_C;
@@ -39,7 +38,7 @@ void initial_matrix_a(MX_A *val) {
 	int i,j;	
 	for(i=0;i<a_i;i++) {
 		for(j=0;j<a_j;j++) {
-			val->MTX[i][j] = 2*(i+1) + 2*(j+1); 
+			val->MTX[i][j] = 12*(i+1) - 3.8*(j+1); 
 		}
 	}	
 }
@@ -49,7 +48,7 @@ void initial_matrix_b(MX_B *val) {
 	int i,j;	
 	for(i=0;i<b_i;i++) {
 		for(j=0;j<b_j;j++) {
-			val->MTX[i][j] = (i+1) + (j+1); 
+			val->MTX[i][j] = 65.1 + 3.3*(i+1) -20.2*(j+1); 
 		}
 	}	
 
@@ -70,7 +69,7 @@ void show_matrix_a(MX_A *val) {
 	int i,j;	
 	for(i=0;i<a_i;i++) {
 		for(j=0;j<a_j;j++) {
-			printf("%d ",val->MTX[i][j]); 
+			printf("%.2f ",val->MTX[i][j]); 
 		}
 		printf("\n");
 	}	
@@ -80,7 +79,7 @@ void show_matrix_b(MX_B *val) {
 	int i,j;	
 	for(i=0;i<b_i;i++) {
 		for(j=0;j<b_j;j++) {
-			printf("%d ", val->MTX[i][j]); 
+			printf("%.2f ", val->MTX[i][j]); 
 		}
 		printf("\n");
 	}	
@@ -90,7 +89,7 @@ void show_matrix_c(MX_C *val) {
 	int i,j;	
 	for(i=0;i<a_i;i++) {
 		for(j=0;j<b_j;j++) {
-			printf("%d ", val->MTX[i][j]); 
+			printf("%.2f ", val->MTX[i][j]); 
 		}
 		printf("\n");
 	}	

@@ -100,7 +100,7 @@ void *test3(void* data) {
 	for (col=0;col<a_i;col++) { 
 		indexs[1] = col;
 		mx_all->mx_c->MTX[row][col] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
-		//printf("c[%d][%d]: %d \n", row, col, mx_all->mx_c->MTX[row][col]);
+		//printf("c[%d][%d]: %.2f \n", row, col, mx_all->mx_c->MTX[row][col]);
 	}
 	free(data);
 	//printf("test3\n");
@@ -138,7 +138,7 @@ void *test2(void* data) {
 	indexs[1] = j;
 
 	mx_all->mx_c->MTX[i][j] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
-	//printf("c[%d][%d]: %d \n", i, j, mx_all->mx_c->MTX[i][j]);
+	//printf("c[%d][%d]: %.2f \n", i, j, mx_all->mx_c->MTX[i][j]);
 
 	free(data);
 	pthread_exit(NULL);
@@ -165,7 +165,7 @@ void run_test2(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 
 void wait_all_thread_done(pthread_t *td, int size) {
 	int i = 0;
-	printf("size:%d\n", size); 
+	//printf("size:%d\n", size); 
 	for (i=0;i<size;i++) {
 		pthread_join(td[i], NULL);
 	}
@@ -244,8 +244,8 @@ int main(int *argc, char *argv[]) {
 		run_test4(mx_a, mx_b, mx_c);
 	}
 
-	printf("cal [c] = [a] * [b]:\n");
-	mx_c->show_matrix(mx_c);
+	//printf("cal [c] = [a] * [b]:\n");
+	//mx_c->show_matrix(mx_c);
 	gettimeofday( &end, NULL );
 
 	passed_time= 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
