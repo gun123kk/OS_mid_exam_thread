@@ -20,17 +20,51 @@ https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tuto
 #include <sys/time.h>
 
 void *test2(void*);
-void run_test2(pthread_t *, MX_A *, MX_B *, MX_C *);
-void wait_all_thread_done(pthread_t *);
+void *test3(void*);
+void run_test2(MX_A *, MX_B *, MX_C *);
+void run_test3(MX_A *, MX_B *, MX_C *);
+void wait_all_thread_done(pthread_t *, int);
 float cal_one_cell(MX_A *, MX_B *, int *);
-void cal_mxa_mul_mxb(MX_A *, MX_B *, MX_C *);
+void run_test1(MX_A *, MX_B *, MX_C *);
 
-typedef struct matrix_all{
-	MX_A *mx_a;
-	MX_B *mx_b;
-	MX_C *mx_c;
-	int index;
-} MX_ALL;
+
+void *test3(void* data) {
+
+	MX_ALL *mx_all = (MX_ALL*) data;
+	int indexs[2];
+	int row = mx_all->index; 
+	int column;
+
+	indexs[0] = row;
+	printf("test3 row:%d\n", row);
+	for (column=0;column<a_i;column++) { 
+		indexs[1] = column;
+		mx_all->mx_c->MTX[row][column] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
+		printf("c[%d][%d]: %d \n", row, column, mx_all->mx_c->MTX[row][column]);
+	}
+	free(data);
+	printf("test3\n");
+	pthread_exit(NULL);
+}
+
+void run_test3(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
+	// test3: 100 threads
+	// threads pointer for test3(100 threads)
+	int size = a_i;
+	pthread_t td[size];	
+	int row = 0;
+
+	for (row=0;row<a_i;row++) {
+		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
+		mx_all->mx_a = mx_a;
+		mx_all->mx_b = mx_b;
+		mx_all->mx_c = mx_c;
+		mx_all->index = row;
+		pthread_create(&(td[row]), NULL, test3, (void*) mx_all);
+	}
+
+	wait_all_thread_done(td, size);
+}
 
 
 void *test2(void* data) {
@@ -50,23 +84,29 @@ void *test2(void* data) {
 	pthread_exit(NULL);
 }
 
-void run_test2(pthread_t *td, MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
-	//test2: 10k threads
+void run_test2(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
+	// test2: 10k threads
+	// threads pointer for test2(10k threads)
+	int size = a_i * b_j;
+	pthread_t td[size];	
 	int i = 0;
-	for (i=0;i<a_i*b_j;i++) {
+
+	for (i=0;i<size;i++) {
 		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
 		mx_all->mx_a = mx_a;
 		mx_all->mx_b = mx_b;
 		mx_all->mx_c = mx_c;
 		mx_all->index = i;
-
 		pthread_create(&(td[i]), NULL, test2, (void*) mx_all);
 	}
+
+	wait_all_thread_done(td, size);
 }
 
-void wait_all_thread_done(pthread_t *td) {
+void wait_all_thread_done(pthread_t *td, int size) {
 	int i = 0;
-	for (i=0;i<a_i*b_j;i++) {
+	printf("size:%d\n", size); 
+	for (i=0;i<size;i++) {
 		pthread_join(td[i], NULL);
 	}
 }
@@ -84,7 +124,7 @@ float cal_one_cell(MX_A *mx_a, MX_B *mx_b, int *indexs) {
 } 
 
 
-void cal_mxa_mul_mxb(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
+void run_test1(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 	//test1: loop
 	int i,j,k;
 	int indexs[2];
@@ -109,12 +149,12 @@ int main(int *argc, char *argv[]) {
 	int strategy = 0;
 	struct timeval start, end;
 	int passed_time = 0;	
-
-	pthread_t td[a_i *b_j];	
+	
+	// get strategy from user typed
 	strategy = atoi(argv[1]);
 	printf("select test_%d\n", strategy);
 
-	//initial matrix
+	// initial matrix
 	set_MX_A_addr(&mx_a);
 	set_MX_B_addr(&mx_b);
 	set_MX_C_addr(&mx_c);
@@ -130,15 +170,16 @@ int main(int *argc, char *argv[]) {
 	// run process by selected strategy 
 	if (strategy == 1) {	
 		printf("==== test1 ====\n");
-		cal_mxa_mul_mxb(mx_a, mx_b, mx_c);
-		printf("cal [c] = [a] * [b]:\n");
-		mx_c->show_matrix(mx_c);
+		run_test1(mx_a, mx_b, mx_c);
 	} else if (strategy == 2) {
 		printf("==== test2 ====\n");
-		run_test2(td, mx_a, mx_b, mx_c);
-		wait_all_thread_done(td);
-		mx_c->show_matrix(mx_c);
+		run_test2(mx_a, mx_b, mx_c);
+	} else if (strategy == 3) {
+		printf("==== test3 ====\n");
+		run_test3(mx_a, mx_b, mx_c);
 	}
+	printf("cal [c] = [a] * [b]:\n");
+	mx_c->show_matrix(mx_c);
 	gettimeofday( &end, NULL );
 
 	passed_time= 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
