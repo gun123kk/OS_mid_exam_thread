@@ -10,6 +10,7 @@ test on the ubuntu18.04 ok
 
 reference:
 https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tutorial/
+https://www.codegrepper.com/code-examples/c/how+to+pass+an+array+to+a+thread+in+c%3F
 */
 
 #include <stdlib.h>
@@ -22,6 +23,7 @@ https://blog.gtwang.org/programming/pthread-multithreading-programming-in-c-tuto
 void *test2(void*);
 void *test3(void*);
 void *test4(void*);
+void *test5(void*);
 void run_test1(MX_A *, MX_B *, MX_C *);
 void run_test2(MX_A *, MX_B *, MX_C *);
 void run_test3(MX_A *, MX_B *, MX_C *);
@@ -29,6 +31,64 @@ void run_test4(MX_A *, MX_B *, MX_C *);
 
 void wait_all_thread_done(pthread_t *, int);
 float cal_one_cell(MX_A *, MX_B *, int *);
+
+
+void *test5(void* data) {
+
+	MX_ALL *mx_all = (MX_ALL*) data;
+	int i,j;
+	int indexs[2];
+	int blk_index = mx_all->index;
+	// block row interval
+	int blk_row_il = a_i / 2; 
+	// block column interval
+	int blk_col_il = a_i / 2;	
+
+	int row = (blk_index / 2) * blk_row_il;
+	int col = (blk_index % 2) * blk_col_il;
+
+	// block row length
+	int blk_row_len = row + blk_row_il;	
+	// block col length
+	int blk_col_len = col + blk_row_il;
+	
+	//printf("test5 , blk_index:%d, row: %d col: %d\n", blk_index, row, col);
+	
+	for (i=row;i<blk_row_len;i++) {
+		indexs[0] = i;
+		for (j=col;j<blk_col_len;j++) {
+			indexs[1] = j;
+			//printf("test5 , blk_index: %d, i: %d, j: %d\n", blk_index, i, j);
+			mx_all->mx_c->MTX[i][j] = cal_one_cell(mx_all->mx_a, mx_all->mx_b, indexs);
+		}
+	}
+
+	free(data);
+	//printf("test5\n");
+	pthread_exit(NULL);
+}
+
+void run_test5(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
+	// test5: 4 threads
+	// threads pointer for test5(4 threads)
+	// one thread calculates block 50*50
+	int size = 4;
+	pthread_t td[size];	
+	int index = 0;
+
+	for (index=0;index<size;index++) {
+		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
+		mx_all->mx_a = mx_a;
+		mx_all->mx_b = mx_b;
+		mx_all->mx_c = mx_c;
+		mx_all->index = index;
+		//printf("test5 , index:%d\n", index);
+		pthread_create(&(td[index]), NULL, test5, (void*) mx_all);
+	}
+
+	wait_all_thread_done(td, size);
+}
+
 
 
 void *test4(void* data) {
@@ -114,7 +174,7 @@ void run_test3(MX_A *mx_a, MX_B *mx_b, MX_C *mx_c) {
 	pthread_t td[size];	
 	int row = 0;
 
-	for (row=0;row<a_i;row++) {
+	for (row=0;row<size;row++) {
 		MX_ALL *mx_all = malloc(sizeof(MX_ALL));
 		mx_all->mx_a = mx_a;
 		mx_all->mx_b = mx_b;
@@ -208,11 +268,13 @@ int main(int *argc, char *argv[]) {
 	MX_C *mx_c = NULL;
 	int strategy = 1;
 	struct timeval start, end;
-	int passed_time = 0;	
+	int execution_time = 0;	
 	
 	// get strategy from user typed
 	if (argv[1] != NULL) {
 		strategy = atoi(argv[1]);
+		if(strategy < 1 && strategy >5) 
+			strategy = 1;
 	}
 	printf("select test_%d\n", strategy);
 
@@ -232,24 +294,33 @@ int main(int *argc, char *argv[]) {
 	// run process by selected strategy 
 	if (strategy == 1) {	
 		printf("==== test1 ====\n");
+		printf("one process, calculates by for-looping\n");
 		run_test1(mx_a, mx_b, mx_c);
 	} else if (strategy == 2) {
 		printf("==== test2 ====\n");
+		printf("10k threads\n");
 		run_test2(mx_a, mx_b, mx_c);
 	} else if (strategy == 3) {
 		printf("==== test3 ====\n");
+		printf("100 threads\n");
 		run_test3(mx_a, mx_b, mx_c);
 	} else if (strategy == 4) {
 		printf("==== test4 ====\n");
+		printf("16 threads\n");
+		run_test4(mx_a, mx_b, mx_c);
+	} else if (strategy == 5) {
+		printf("==== test5 ====\n");
+		printf("4 threads\n");
 		run_test4(mx_a, mx_b, mx_c);
 	}
 
-	//printf("cal [c] = [a] * [b]:\n");
+	// printf("cal [c] = [a] * [b]:\n");
 	//mx_c->show_matrix(mx_c);
+
 	gettimeofday( &end, NULL );
 
-	passed_time= 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
-    printf("passed time: %d us\n", passed_time);
+	execution_time = 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec; 
+    printf("execution time: %d us\n", execution_time);
 
 	free(mx_a);
 	free(mx_b);

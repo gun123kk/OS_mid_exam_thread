@@ -29,8 +29,8 @@ typedef struct matrix_c {
 typedef struct matrix_all{
     MX_A *mx_a;
     MX_B *mx_b;
-    MX_C *mx_c;                                                                                                                                                        
-    int index; 
+    MX_C *mx_c;                                                                                                                                    
+	int index; 
 } MX_ALL; 
 
 void initial_matrix_a(MX_A *val) {
@@ -51,7 +51,6 @@ void initial_matrix_b(MX_B *val) {
 			val->MTX[i][j] = 65.1 + 3.3*(i+1) -20.2*(j+1); 
 		}
 	}	
-
 }
 
 void initial_matrix_c(MX_C *val) {
@@ -62,7 +61,6 @@ void initial_matrix_c(MX_C *val) {
 			val->MTX[i][j] = 0; 
 		}
 	}	
-
 }
 
 void show_matrix_a(MX_A *val) {
